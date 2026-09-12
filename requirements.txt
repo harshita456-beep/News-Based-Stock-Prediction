@@ -1,0 +1,10 @@
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+transformers>=4.35.0
+torch>=2.1.0
+pynytimes>=0.10.0
+yfinance>=0.2.36
+nltk>=3.8.1
+python-dotenv>=1.0.0

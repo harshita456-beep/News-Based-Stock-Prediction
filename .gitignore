@@ -1,0 +1,30 @@
+# Environment / secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+.ipynb
+
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+#data
+*.csv
+
+#saved models
+*.pth
