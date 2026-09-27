@@ -53,4 +53,3 @@ Three models are used:
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
-└── LICENSE
