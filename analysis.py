@@ -1,9 +1,3 @@
-"""
-Analysis utilities: loading the trained models, comparing them on the test
-set, and predicting near-future prices using live news + stock data.
-
-This file uses PyTorch for loading and running the trained LSTM models.
-"""
 
 import datetime
 
@@ -29,7 +23,6 @@ from config import (
     SEQUENCE_LENGTH,
 )
 
-# Import PyTorch model architectures
 from importlib import import_module
 
 LSTMModel = import_module("6_LSTM_model").LSTMModel
@@ -39,16 +32,9 @@ BertLSTMModel = import_module("7_lstm_model_bert").BertLSTMModel
 _finbert_pipeline = None
 
 
-# ---------------------------------------------------------
-# FinBERT Sentiment
-# ---------------------------------------------------------
-
+ 
 def get_finbert_sentiment(headlines):
-    """
-    Average FinBERT sentiment score (-1 to 1) for a list of headlines.
-    Loads the FinBERT pipeline once and reuses it across calls.
-    """
-
+  
     global _finbert_pipeline
 
     headlines = [
@@ -75,7 +61,7 @@ def get_finbert_sentiment(headlines):
             "ProsusAI/finbert"
         )
 
-        # Explicitly use PyTorch
+        # PyTorch
         _finbert_pipeline = pipeline(
             "sentiment-analysis",
             model=model,
@@ -104,13 +90,9 @@ def get_finbert_sentiment(headlines):
     return sum(scores) / len(scores)
 
 
-# ---------------------------------------------------------
 # Today's News
-# ---------------------------------------------------------
-
 def get_today_news():
-    """Fetch today's finance headlines via the news-collection module."""
-
+   
     from importlib import import_module
 
     news_collection = import_module(
@@ -126,15 +108,11 @@ def get_today_news():
     )
 
 
-# ---------------------------------------------------------
-# Recent Stock Data
-# ---------------------------------------------------------
-
+#stock data
 def get_recent_stock_data(
     ticker=TICKER,
     days=30
-):
-    """Fetch the last `days` days of daily closing prices for `ticker`."""
+): 
 
     end_date = datetime.datetime.now()
 
@@ -151,28 +129,17 @@ def get_recent_stock_data(
     )
 
 
-# ---------------------------------------------------------
-# Load PyTorch Model
-# ---------------------------------------------------------
-
+#load models
 def load_pytorch_model(
     model_path,
     model_type
 ):
-    """
-    Load a saved PyTorch model.
-
-    model_type:
-        "lstm"      -> plain LSTM
-        "bert_lstm" -> FinBERT + LSTM
-    """
+    
 
     if model_type == "lstm":
-
         model = LSTMModel()
 
     elif model_type == "bert_lstm":
-
         model = BertLSTMModel()
 
     else:
@@ -195,9 +162,7 @@ def load_pytorch_model(
     return model
 
 
-# ---------------------------------------------------------
-# Future Price Prediction
-# ---------------------------------------------------------
+#predict future prices
 
 def predict_future_prices(
     model_path,
@@ -207,20 +172,16 @@ def predict_future_prices(
     days_ahead=5
 ):
     """
-    Roll a trained model forward `days_ahead` days using its own previous
-    predictions as input for the next step.
 
-    If `sentiment_score` is given, it is appended as an extra timestep
+    If sentiment_score is given, it is appended as an extra timestep
     for the FinBERT-LSTM model.
-
-    If `sentiment_score` is None, the plain LSTM model is used.
+    If sentiment_score is None, the plain LSTM model is used.
     """
 
     try:
 
-        # -------------------------------------------------
-        # Determine which model to load
-        # -------------------------------------------------
+
+#which model to use?
 
         if sentiment_score is None:
 
@@ -236,13 +197,9 @@ def predict_future_prices(
                 "bert_lstm"
             )
 
-        # -------------------------------------------------
-        # Prepare stock prices
-        # -------------------------------------------------
-
+        
         close_prices = stock_data["Close"].values
 
-        # Handle possible yfinance MultiIndex output
         close_prices = np.asarray(
             close_prices
         ).reshape(-1, 1)
@@ -260,10 +217,7 @@ def predict_future_prices(
 
         predictions = []
 
-        # -------------------------------------------------
-        # Predict one day at a time
-        # -------------------------------------------------
-
+          # Predict one day at a time
         for _ in range(days_ahead):
 
             if sentiment_score is not None:
@@ -320,10 +274,8 @@ def predict_future_prices(
 
             window = window[1:]
 
-        # -------------------------------------------------
-        # Convert predictions back to original scale
-        # -------------------------------------------------
-
+       # Convert predictions back to original scale
+  
         predictions = scaler.inverse_transform(
             np.array(predictions).reshape(-1, 1)
         ).flatten()
@@ -339,20 +291,14 @@ def predict_future_prices(
         return None
 
 
-# ---------------------------------------------------------
-# Analyze Future Market
-# ---------------------------------------------------------
+
 
 def analyze_market_future(
     days_ahead=5,
     ticker=TICKER,
     plot=True
 ):
-    """
-    Predict the next `days_ahead` trading days of `ticker` prices using
-    both the plain LSTM model and the FinBERT-LSTM model, using today's
-    news for the sentiment input.
-    """
+   
 
     stock_data = get_recent_stock_data(
         ticker,
@@ -386,9 +332,9 @@ def analyze_market_future(
         days_ahead=days_ahead
     )
 
-    # -----------------------------------------------------
+    
     # Plot predictions
-    # -----------------------------------------------------
+ 
 
     if plot:
 
@@ -440,9 +386,8 @@ def analyze_market_future(
     return lstm_preds, bert_preds
 
 
-# ---------------------------------------------------------
-# Compare Models on Test Set
-# ---------------------------------------------------------
+
+
 
 def compare_models_on_test_set(
     stock_path=STOCK_PRICE_CSV,
@@ -453,8 +398,7 @@ def compare_models_on_test_set(
 ):
     """
     Load the saved LSTM and FinBERT-LSTM PyTorch models, run them on
-    the held-out test split, print MAE / MAPE / accuracy for each,
-    and optionally plot predictions vs. actuals.
+    the held-out test split, print MAE / MAPE / accuracy for each
     """
 
     stock_data = pd.read_csv(
@@ -481,10 +425,7 @@ def compare_models_on_test_set(
         split_idx:
     ]
 
-    # -----------------------------------------------------
-    # Scale using training data
-    # -----------------------------------------------------
-
+   
     scaler = MinMaxScaler()
 
     scaler.fit(
@@ -495,10 +436,7 @@ def compare_models_on_test_set(
         test_data.reshape(-1, 1)
     )
 
-    # -----------------------------------------------------
-    # Plain LSTM test sequences
-    # -----------------------------------------------------
-
+    #only lstm
     X_test_lstm = np.array(
         [
             scaled_test_data[
@@ -512,10 +450,7 @@ def compare_models_on_test_set(
         dtype=np.float32
     )
 
-    # -----------------------------------------------------
-    # FinBERT-LSTM test sequences
-    # -----------------------------------------------------
-
+    #finbert + lstm
     test_sentiment = news_data[
         "FinBERT score"
     ].values[
@@ -553,9 +488,6 @@ def compare_models_on_test_set(
         1
     )
 
-    # -----------------------------------------------------
-    # Load PyTorch models
-    # -----------------------------------------------------
 
     lstm_model = load_pytorch_model(
         LSTM_MODEL_PATH,
@@ -567,10 +499,7 @@ def compare_models_on_test_set(
         "bert_lstm"
     )
 
-    # -----------------------------------------------------
-    # LSTM predictions
-    # -----------------------------------------------------
-
+    #lstm predictions
     X_test_lstm_tensor = torch.tensor(
         X_test_lstm,
         dtype=torch.float32
@@ -588,11 +517,7 @@ def compare_models_on_test_set(
     lstm_predictions = scaler.inverse_transform(
         lstm_predictions
     )
-
-    # -----------------------------------------------------
-    # FinBERT-LSTM predictions
-    # -----------------------------------------------------
-
+#finbert + lstm predictions
     X_test_bert_tensor = torch.tensor(
         X_test_bert,
         dtype=torch.float32
@@ -611,18 +536,12 @@ def compare_models_on_test_set(
         bert_predictions
     )
 
-    # -----------------------------------------------------
-    # Actual values
-    # -----------------------------------------------------
-
+    
     actual_values = test_data[
         sequence_length:
     ]
 
-    # -----------------------------------------------------
-    # Evaluation
-    # -----------------------------------------------------
-
+    #EVALUATION 
     results = {}
 
     for name, preds in [
@@ -664,10 +583,10 @@ def compare_models_on_test_set(
             f"  Accuracy: {acc:.4f}"
         )
 
-    # -----------------------------------------------------
-    # Plot
-    # -----------------------------------------------------
 
+
+
+  #plotting actual vs predicted prices
     if plot:
 
         plt.figure(
@@ -726,10 +645,6 @@ def compare_models_on_test_set(
 
     return results
 
-
-# ---------------------------------------------------------
-# Main
-# ---------------------------------------------------------
 
 if __name__ == "__main__":
 
